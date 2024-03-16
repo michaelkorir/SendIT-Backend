@@ -168,6 +168,33 @@ class ParcelDestination(Resource):
     
 api.add_resource(ParcelDestination, '/parcel/destination/<string:tracking_number>')
 
+class CancelParcel(Resource):
+    @jwt_required()
+    def put(self, tracking_number):
+        current_user_id = get_jwt_identity()
+        parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
+
+        if parcel is None:
+            return ({"message": "Parcel not found"}), 404
+
+        # is user authorized to cancel this parcel
+        if parcel.user_id != current_user_id:
+            return ({"message": "You are not authorized to cancel this parcel"}), 403
+
+        # Check if the parcel's status is not delivered
+        if parcel.status.lower() != 'delivered':
+            # Cancel the parcel (update status)
+            parcel.status = 'cancelled'
+            db.session.commit()
+            
+            return ({"message": "Parcel cancelled successfully"}), 200
+        else:
+            # response indicating failure due to delivered status
+            return ({"message": "Cannot cancel a delivered parcel"}), 400
+
+
+api.add_resource(CancelParcel, '/parcel/cancel/<string:tracking_number>')
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

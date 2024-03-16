@@ -1,7 +1,7 @@
 from flask import Flask, make_response, request, jsonify, abort, render_template
 from flask_migrate import Migrate
 from flask import jsonify
-from flask_restful import  Api, Resource
+from flask_restful import  Api, Resource, reqparse
 from flask_cors import  CORS
 from flask_jwt_extended import JWTManager, current_user, jwt_required, get_jwt_identity
 from werkzeug.exceptions import NotFound
@@ -44,6 +44,37 @@ class ParcelsList(Resource):
         return jsonify(serialized_parcels)
     
 
+    @jwt_required()
+    def post(self):
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+
+        # Check if the user is an admin
+        if current_user.role == 'admin':
+            return {"message": "Admins are not allowed to create parcels"}, 403
+
+        data = request.get_json()
+
+        # Check if all required fields are filled
+        required_fields = ['name', 'description', 'weight', 'pickup_location', 'destination_location']
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return {"message": f"Missing required fields: {', '.join(missing_fields)}"}, 400
+
+        new_parcel = Parcel(
+            user_id=current_user_id,
+            name=data['name'],
+            description=data['description'],
+            weight=data['weight'],
+            pickup_location=data['pickup_location'],
+            destination_location=data['destination_location']
+        )
+
+        db.session.add(new_parcel)
+        db.session.commit()
+
+        return {"message": "Parcel created successfully"}, 201
+    
 api.add_resource(ParcelsList, "/parcels")
 
 def get_user_role_by_id(user_id):
@@ -52,6 +83,56 @@ def get_user_role_by_id(user_id):
         return user.role
     else:
         return None
+
+
+class ParcelStatus(Resource):
+    @jwt_required()
+    def put(self, parcel_id):
+        current_user_id = get_jwt_identity()
+        user_role = get_user_role_by_id(current_user_id)
+        
+        if user_role != 'admin':
+            return {"message": "You are not authorized to perform this action"}, 403
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('status', type=str, required=True, help='New status of the parcel is required')
+        args = parser.parse_args()
+
+        parcel = Parcel.query.get(parcel_id)
+        if parcel:
+            parcel.status = args['status']
+            db.session.commit()  # Commit changes to the database
+            return jsonify({"message": "Parcel status updated successfully"})
+        else:
+            return {"message": "Parcel not found"}, 404
+
+api.add_resource(ParcelStatus, "/parcel/<int:parcel_id>/status")
+
+
+class ParcelLocation(Resource):
+    @jwt_required()
+    def put(self, parcel_id):
+        current_user_id = get_jwt_identity()
+        user_role = get_user_role_by_id(current_user_id)
+        
+        if user_role != 'admin':
+            return {"message": "You are not authorized to perform this action"}, 403
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('location', type=str, required=True, help='New location of the parcel is required')
+        args = parser.parse_args()
+
+        parcel = Parcel.query.get(parcel_id)
+        if parcel:
+            parcel.present_location = args['location']
+            db.session.commit()  # Commit changes to the database
+            return jsonify({"message": "Parcel location updated successfully"})
+        else:
+            return {"message": "Parcel not found"}, 404
+
+
+api.add_resource(ParcelLocation, "/parcel/<int:parcel_id>/location")
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

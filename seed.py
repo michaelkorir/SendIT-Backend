@@ -9,10 +9,12 @@ def seed_data():
         db.session.query(Parcel).delete()
 
         users = [
-            {'username': 'user1', 'email': 'user1@example.com', 'password': 'password1'},
-            {'username': 'user2', 'email': 'user2@example.com', 'password': 'password2'},
-            {'username': 'admin1', 'email': 'admin1@example.com', 'password': 'admin1', 'role': 'admin'},
-            {'username': 'admin2', 'email': 'admin2@example.com', 'password': 'admin2', 'role': 'admin'},
+            {'username': 'user1', 'email': 'michael.kiptoo@student.moringaschool.com', 'password': 'password1'},
+            {'username': 'user2', 'email': 'ian.kiplagat@student.moringaschool.com', 'password': 'password2'},
+            {'username': 'user3', 'email': 'mueni.shikuku@student.moringaschool.com', 'password': 'password3'},
+            {'username': 'user4', 'email': 'allan.murigi@student.moringaschool.com', 'password': 'password4'},
+            {'username': 'user5', 'email': 'masud.abdi@student.moringaschool.com', 'password': 'password5'},
+            {'username': 'admin1', 'email': 'admin1@example.com', 'password': 'admin1', 'role': 'admin'}
         ]
 
         for data in users:
@@ -36,7 +38,8 @@ def seed_data():
             {'user_id': 1, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 2.5, 'pickup_location': 'Nairobi', 'destination_location': 'Mombasa', 'status': 'pending', 'present_location': 'Nairobi', 'notifications': 'Your parcel has been picked up and is on its way to Mombasa.'},
             {'user_id': 2, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 1.8, 'pickup_location': 'Kisumu', 'destination_location': 'Nakuru', 'status': 'pending', 'present_location': 'Kisumu', 'notifications': 'Your parcel has been picked up and is on its way to Nakuru.'},
             {'user_id': 3, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 3.2, 'pickup_location': 'Eldoret', 'destination_location': 'Nairobi', 'status': 'in-transit', 'present_location': 'Eldoret', 'notifications': 'Your parcel has been picked up and is on its way to Nairobi.'},
-            {'user_id': 4, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 0.9, 'pickup_location': 'Mombasa', 'destination_location': 'Kisumu', 'status': 'delivered', 'present_location': 'Kisumu', 'notifications': 'Your parcel has been delivered to Kisumu.Visit our office to collect your parcel.'}
+            {'user_id': 4, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 0.9, 'pickup_location': 'Mombasa', 'destination_location': 'Kisumu', 'status': 'delivered', 'present_location': 'Kisumu', 'notifications': 'Your parcel has been delivered to Kisumu.Visit our office to collect your parcel.'},
+            {'user_id': 5, 'name': 'laptop', 'description': 'Hp Laptop in a box', 'weight': 0.9, 'pickup_location': 'Mombasa', 'destination_location': 'Kisumu', 'status': 'delivered', 'present_location': 'Kisumu', 'notifications': 'Your parcel has been delivered to Kisumu.Visit our office to collect your parcel.'}
         ]
 
         parcels = []

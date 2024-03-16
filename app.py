@@ -43,6 +43,21 @@ def handle_not_found(e):
     response = make_response("NotFound: The requested resource not found", 404)
     return response
 
+class UserParcels(Resource):
+    @jwt_required()
+    def get(self):
+        current_user_id = get_jwt_identity()
+        user_role = get_user_role_by_id(current_user_id)
+        if user_role != 'user':
+            return {"message": "Admins do not have parcels"}, 403
+
+        parcels = Parcel.query.filter_by(user_id=current_user_id).all()
+        
+        serialized_parcels = [parcel.serialize() for parcel in parcels]
+        return jsonify(serialized_parcels)
+        
+api.add_resource(UserParcels, "/userparcels")
+
 class ParcelsList(Resource):
     @jwt_required()
     def get(self):

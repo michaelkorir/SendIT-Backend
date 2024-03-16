@@ -1,4 +1,8 @@
-from flask import Flask, make_response, request, jsonify, abort, render_template
+from datetime import timedelta
+from mailbox import Message
+# import mailbox
+from flask_mail import Mail
+from flask import Flask, current_app, make_response, request, jsonify, abort, render_template
 from flask_migrate import Migrate
 from flask import jsonify
 from flask_restful import  Api, Resource, reqparse
@@ -15,6 +19,14 @@ app.config['JWT_SECRET_KEY'] = b'\xb2\xd3B\xb9 \xab\xc0By\x13\x10\x84\xb7M!\x11'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///SENDIT.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_SECRET_KEY'] = 'senditadmindashboard'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=5)
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'senditkenya@gmail.com'
+app.config['MAIL_PASSWORD'] = 'ibvjuqdlpemtiaqf'
+app.config['MAIL_DEFAULT_SENDER'] = 'senditkenya@gmail.com'
+mail = Mail(app)
 
 migrate = Migrate(app, db)
 db.init_app(app)
@@ -44,7 +56,6 @@ class ParcelsList(Resource):
         serialized_parcels = [parcel.serialize() for parcel in parcels]
         return jsonify(serialized_parcels)
     
-
     @jwt_required()
     def post(self):
         current_user_id = get_jwt_identity()
@@ -103,11 +114,23 @@ class ParcelStatus(Resource):
         if parcel:
             if parcel.status.lower() == 'cancelled':
                 return ({"message": "Cannot update status of a cancelled parcel"}), 400
+            previous_status = parcel.status
             parcel.status = args['status']
             db.session.commit()  # Commit changes to the database
+            
+            # Send email notification to user
+            send_email_notification(parcel.user, parcel.tracking_number, previous_status, args['status'])
+            
             return ({"message": "Parcel status updated successfully"})
         else:
             return {"message": "Parcel not found"}, 404
+
+def send_email_notification(user, tracking_number, previous_status, new_status):
+    subject = "Parcel Status Update"
+    body = f"Your parcel with tracking number {tracking_number} has been updated.\nPrevious status: {previous_status}\nNew status: {new_status}"
+    
+    mail.send_message(subject=subject, recipients=[user.email], body=body)
+
 
 api.add_resource(ParcelStatus, "/parcel/status/<string:tracking_number>")
 

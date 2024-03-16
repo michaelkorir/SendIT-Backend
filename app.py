@@ -136,6 +136,38 @@ class ParcelLocation(Resource):
 
 api.add_resource(ParcelLocation, "/parcel/location/<string:tracking_number>")
 
+class ParcelDestination(Resource):
+    @jwt_required()
+    def put(self, tracking_number):
+        current_user_id = get_jwt_identity()
+        parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
+
+        # Do parcel exist
+        if not parcel:
+            return {"message": "Parcel not found"}, 404
+
+        # is user authorized to modify this parcel
+        if parcel.user_id != current_user_id:
+            return {"message": "You are not authorized to modify this parcel"}, 403
+
+        # Check if the parcel's status is delivered
+        if parcel.status == 'delivered':
+            return {"message": "Parcel has already been delivered, cannot modify destination"}, 400
+
+        data = request.get_json()
+
+        # is new destination location provided
+        if 'destination_location' not in data:
+            return {"message": "New destination location is required"}, 400
+
+        # Update the destination location
+        parcel.destination_location = data['destination_location']
+        db.session.commit()
+
+        return {"message": "Parcel destination updated successfully"}, 200
+    
+api.add_resource(ParcelDestination, '/parcel/destination/<string:tracking_number>')
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

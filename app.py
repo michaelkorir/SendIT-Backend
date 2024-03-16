@@ -4,6 +4,7 @@ from flask import jsonify
 from flask_restful import  Api, Resource, reqparse
 from flask_cors import  CORS
 from flask_jwt_extended import JWTManager, current_user, jwt_required, get_jwt_identity
+from sqlalchemy import func
 from werkzeug.exceptions import NotFound
 from models import db, User, Parcel, TokenBlocklist
 from auth import auth_bp
@@ -87,7 +88,7 @@ def get_user_role_by_id(user_id):
 
 class ParcelStatus(Resource):
     @jwt_required()
-    def put(self, parcel_id):
+    def put(self, tracking_number):
         current_user_id = get_jwt_identity()
         user_role = get_user_role_by_id(current_user_id)
         
@@ -98,20 +99,22 @@ class ParcelStatus(Resource):
         parser.add_argument('status', type=str, required=True, help='New status of the parcel is required')
         args = parser.parse_args()
 
-        parcel = Parcel.query.get(parcel_id)
+        parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
         if parcel:
+            if parcel.status.lower() == 'cancelled':
+                return ({"message": "Cannot update status of a cancelled parcel"}), 400
             parcel.status = args['status']
             db.session.commit()  # Commit changes to the database
-            return jsonify({"message": "Parcel status updated successfully"})
+            return ({"message": "Parcel status updated successfully"})
         else:
             return {"message": "Parcel not found"}, 404
 
-api.add_resource(ParcelStatus, "/parcel/<int:parcel_id>/status")
+api.add_resource(ParcelStatus, "/parcel/status/<string:tracking_number>")
 
 
 class ParcelLocation(Resource):
     @jwt_required()
-    def put(self, parcel_id):
+    def put(self, tracking_number):
         current_user_id = get_jwt_identity()
         user_role = get_user_role_by_id(current_user_id)
         
@@ -119,19 +122,19 @@ class ParcelLocation(Resource):
             return {"message": "You are not authorized to perform this action"}, 403
 
         parser = reqparse.RequestParser()
-        parser.add_argument('location', type=str, required=True, help='New location of the parcel is required')
+        parser.add_argument('present_location', type=str, required=True, help='New location of the parcel is required')
         args = parser.parse_args()
 
-        parcel = Parcel.query.get(parcel_id)
+        parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
         if parcel:
-            parcel.present_location = args['location']
+            parcel.present_location = args['present_location']
             db.session.commit()  # Commit changes to the database
-            return jsonify({"message": "Parcel location updated successfully"})
+            return ({"message": "Parcel location updated successfully"})
         else:
             return {"message": "Parcel not found"}, 404
 
 
-api.add_resource(ParcelLocation, "/parcel/<int:parcel_id>/location")
+api.add_resource(ParcelLocation, "/parcel/location/<string:tracking_number>")
 
 
 if __name__ == '__main__':

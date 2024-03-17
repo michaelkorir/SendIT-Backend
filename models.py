@@ -58,10 +58,11 @@ class Parcel(db.Model):
     pickup_location = db.Column(db.String(100), nullable=False)
     destination_location = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(20), default='pending')
-    present_location = db.Column(db.String(100))
-    notifications = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    present_location = db.Column(db.String(100), default=None)
+    notifications = db.Column(db.Text, default= None)
+    created_at = db.Column(db.DateTime(), default=datetime.now)
+    updated_at = db.Column(db.DateTime(), default=datetime.now)
+
 
     def __init__(self, user_id, name, description, weight, pickup_location, destination_location, status=None, present_location=None, notifications=None):
         self.user_id = user_id
@@ -73,7 +74,13 @@ class Parcel(db.Model):
         self.destination_location = destination_location
         self.status = status if status is not None else 'pending'  
         self.present_location = present_location
-        self.notifications = notifications
+        if present_location is  None:
+            self.present_location =  pickup_location
+        if notifications is None:
+            user = User.query.get(user_id)
+            self.notifications = f' {user.username} ! Your order has been successfully placed. You will receive your parcel in 2 - 5 working days.'
+        else:
+            self.notifications = notifications
 
     def generate_tracking_number(self):
         length = 5

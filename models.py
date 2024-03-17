@@ -103,10 +103,9 @@ class TokenBlocklist(db.Model):
     jti = db.Column(db.String(), nullable=True)
     created_at = db.Column(db.DateTime(), default=datetime.now)
 
-    @classmethod
-    def is_jti_blacklisted(cls, jti):
-        return cls.query.filter_by(jti=jti).first() is not None
-
-    def add(self):
+    def __repr__(self):
+        return f"<Token {self.jti}>"
+    
+    def save(self):
         db.session.add(self)
         db.session.commit()

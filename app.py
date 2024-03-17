@@ -1,13 +1,12 @@
 from datetime import timedelta
 from mailbox import Message
-# import mailbox
 from flask_mail import Mail
 from flask import Flask, current_app, make_response, request, jsonify, abort, render_template
 from flask_migrate import Migrate
 from flask import jsonify
 from flask_restful import  Api, Resource, reqparse
 from flask_cors import  CORS
-from flask_jwt_extended import JWTManager, current_user, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from sqlalchemy import func
 from werkzeug.exceptions import NotFound
 from models import db, User, Parcel, TokenBlocklist
@@ -38,12 +37,20 @@ jwt.init_app(app)
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
+#check if the jwt is revocked
+@jwt.token_in_blocklist_loader 
+def token_in_blocklist(jwt_header,jwt_data):
+    jti = jwt_data['jti']
+
+    token = db.session.query(TokenBlocklist).filter(TokenBlocklist.jti == jti).scalar()
+    return token is not None
+
 @app.errorhandler(NotFound)
 def handle_not_found(e):
     response = make_response("NotFound: The requested resource not found", 404)
     return response
 
-class UserParcels(Resource):
+class Parcels(Resource):
     @jwt_required()
     def get(self):
         current_user_id = get_jwt_identity()
@@ -55,34 +62,17 @@ class UserParcels(Resource):
         
         serialized_parcels = [parcel.serialize() for parcel in parcels]
         return jsonify(serialized_parcels)
-        
-api.add_resource(UserParcels, "/userparcels")
-
-class ParcelsList(Resource):
-    @jwt_required()
-    def get(self):
-        current_user_id = get_jwt_identity()
-        user_role = get_user_role_by_id(current_user_id)
-        
-        if user_role != 'admin':
-            return {"message": "You are not authorized to access this resource"}, 403
-
-        parcels = Parcel.query.all()
-        serialized_parcels = [parcel.serialize() for parcel in parcels]
-        return jsonify(serialized_parcels)
     
     @jwt_required()
     def post(self):
         current_user_id = get_jwt_identity()
         current_user = User.query.get(current_user_id)
 
-        # Check if the user is an admin
         if current_user.role == 'admin':
             return {"message": "Admins are not allowed to create parcels"}, 403
 
         data = request.get_json()
 
-        # Check if all required fields are filled
         required_fields = ['name', 'description', 'weight', 'pickup_location', 'destination_location']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
@@ -101,6 +91,21 @@ class ParcelsList(Resource):
         db.session.commit()
 
         return {"message": "Parcel created successfully"}, 201
+           
+api.add_resource(Parcels, "/parcel")
+
+class ParcelsList(Resource):
+    @jwt_required()
+    def get(self):
+        current_user_id = get_jwt_identity()
+        user_role = get_user_role_by_id(current_user_id)
+        
+        if user_role != 'admin':
+            return {"message": "You are not authorized to access this resource"}, 403
+
+        parcels = Parcel.query.all()
+        serialized_parcels = [parcel.serialize() for parcel in parcels]
+        return jsonify(serialized_parcels)
     
 api.add_resource(ParcelsList, "/parcels")
 
@@ -131,9 +136,8 @@ class ParcelStatus(Resource):
                 return ({"message": "Cannot update status of a cancelled parcel"}), 400
             previous_status = parcel.status
             parcel.status = args['status']
-            db.session.commit()  # Commit changes to the database
+            db.session.commit() 
             
-            # Send email notification to user
             send_email_notification(parcel.user, parcel.tracking_number, previous_status, args['status'])
             
             return ({"message": "Parcel status updated successfully"})
@@ -176,29 +180,24 @@ api.add_resource(ParcelLocation, "/parcel/location/<string:tracking_number>")
 
 class ParcelDestination(Resource):
     @jwt_required()
-    def put(self, tracking_number):
+    def patch(self, tracking_number):
         current_user_id = get_jwt_identity()
         parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
 
-        # Do parcel exist
         if not parcel:
             return {"message": "Parcel not found"}, 404
 
-        # is user authorized to modify this parcel
         if parcel.user_id != current_user_id:
             return {"message": "You are not authorized to modify this parcel"}, 403
 
-        # Check if the parcel's status is delivered
         if parcel.status == 'delivered':
             return {"message": "Parcel has already been delivered, cannot modify destination"}, 400
 
         data = request.get_json()
 
-        # is new destination location provided
         if 'destination_location' not in data:
             return {"message": "New destination location is required"}, 400
 
-        # Update the destination location
         parcel.destination_location = data['destination_location']
         db.session.commit()
 
@@ -215,19 +214,15 @@ class CancelParcel(Resource):
         if parcel is None:
             return ({"message": "Parcel not found"}), 404
 
-        # is user authorized to cancel this parcel
         if parcel.user_id != current_user_id:
             return ({"message": "You are not authorized to cancel this parcel"}), 403
 
-        # Check if the parcel's status is not delivered
         if parcel.status.lower() != 'delivered':
-            # Cancel the parcel (update status)
             parcel.status = 'cancelled'
             db.session.commit()
             
             return ({"message": "Parcel cancelled successfully"}), 200
-        else:
-            # response indicating failure due to delivered status
+        else:    
             return ({"message": "Cannot cancel a delivered parcel"}), 400
 
 

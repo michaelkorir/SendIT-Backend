@@ -84,13 +84,22 @@ class Parcels(Resource):
             description=data['description'],
             weight=data['weight'],
             pickup_location=data['pickup_location'],
-            destination_location=data['destination_location']
+            destination_location=data['destination_location'],
+            notifications=data.get('notifications')
         )
 
         db.session.add(new_parcel)
         db.session.commit()
+        send_post_notifications(current_user, new_parcel.tracking_number, new_parcel.notifications)
 
         return {"message": "Parcel created successfully"}, 201
+
+def send_post_notifications(user, tracking_number, notifications):
+    subject = "New Parcel Created"
+    body = f" Hi{notifications} \n \n Your parcel tracking number is {tracking_number}.\n \n Kind Regards \n \n SendIT Kenya."
+    
+    mail.send_message(subject=subject, recipients=[user.email], body=body)
+
            
 api.add_resource(Parcels, "/parcel")
 
@@ -207,24 +216,23 @@ api.add_resource(ParcelDestination, '/parcel/destination/<string:tracking_number
 
 class CancelParcel(Resource):
     @jwt_required()
-    def put(self, tracking_number):
+    def delete(self, tracking_number):
         current_user_id = get_jwt_identity()
         parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
 
         if parcel is None:
-            return ({"message": "Parcel not found"}), 404
+            return {"message": "Parcel not found"}, 404
 
         if parcel.user_id != current_user_id:
-            return ({"message": "You are not authorized to cancel this parcel"}), 403
+            return {"message": "You are not authorized to cancel this parcel"}, 403
 
-        if parcel.status.lower() != 'delivered':
-            parcel.status = 'cancelled'
-            db.session.commit()
+        if parcel.status.lower() == 'delivered':
+            return {"message": "Cannot cancel a delivered parcel"}, 400
+
+        db.session.delete(parcel)
+        db.session.commit()
             
-            return ({"message": "Parcel cancelled successfully"}), 200
-        else:    
-            return ({"message": "Cannot cancel a delivered parcel"}), 400
-
+        return {"message": "Parcel cancelled successfully"}, 200
 
 api.add_resource(CancelParcel, '/parcel/cancel/<string:tracking_number>')
 

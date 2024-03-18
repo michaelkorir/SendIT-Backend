@@ -18,7 +18,6 @@ app = Flask(__name__)
 
 app.config['JWT_SECRET_KEY'] = b'\xb2\xd3B\xb9 \xab\xc0By\x13\x10\x84\xb7M!\x11'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///SENDIT.db'
-#postgresql://sendit_midm_user:1DsMIp4yrQBSa8TnNYnmRMcIK8Ecddlg@dpg-cnruj46d3nmc739a3lsg-a.oregon-postgres.render.com/sendit_midm
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -42,7 +41,7 @@ jwt.init_app(app)
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
-#check if the jwt is revocked
+#check if the jwt is revoked
 @jwt.token_in_blocklist_loader 
 def token_in_blocklist(jwt_header,jwt_data):
     jti = jwt_data['jti']

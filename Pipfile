@@ -18,6 +18,7 @@ flask-migrate = "*"
 flask-mail = "*"
 mailbox = "*"
 psycopg2-binary = "*"
+gunicorn = "*"
 
 [dev-packages]
 

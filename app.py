@@ -55,6 +55,10 @@ def handle_not_found(e):
     response = make_response("NotFound: The requested resource not found", 404)
     return response
 
+@app.route("/")
+def home():
+    return "<h1>Welcome to SendIT Courrier</h1>"
+
 class Parcels(Resource):
     @jwt_required()
     def get(self):

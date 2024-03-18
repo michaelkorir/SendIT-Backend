@@ -224,7 +224,7 @@ api.add_resource(ParcelDestination, '/parcel/destination/<string:tracking_number
 
 class CancelParcel(Resource):
     @jwt_required()
-    def delete(self, tracking_number):
+    def put(self, tracking_number):
         current_user_id = get_jwt_identity()
         parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
 

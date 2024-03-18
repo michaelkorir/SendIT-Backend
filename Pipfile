@@ -17,6 +17,7 @@ validate-email = "*"
 flask-migrate = "*"
 flask-mail = "*"
 mailbox = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 

@@ -212,7 +212,7 @@ class ParcelDestination(Resource):
 
         data = request.get_json()
 
-        if 'destination_location' not in data:
+        if 'new_destination' not in data:
             return {"message": "New destination location is required"}, 400
 
         parcel.destination_location = data['new_destination']

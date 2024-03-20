@@ -215,7 +215,7 @@ class ParcelDestination(Resource):
         if 'destination_location' not in data:
             return {"message": "New destination location is required"}, 400
 
-        parcel.destination_location = data['destination_location']
+        parcel.destination_location = data['new_destination']
         db.session.commit()
 
         return {"message": "Parcel destination updated successfully"}, 200

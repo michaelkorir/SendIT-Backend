@@ -181,12 +181,12 @@ class ParcelLocation(Resource):
             return {"message": "You are not authorized to perform this action"}, 403
 
         parser = reqparse.RequestParser()
-        parser.add_argument('present_location', type=str, required=True, help='New location of the parcel is required')
+        parser.add_argument('current_location', type=str, required=True, help='Current location of the parcel is required')
         args = parser.parse_args()
 
         parcel = Parcel.query.filter_by(tracking_number=tracking_number.upper()).first()
         if parcel:
-            parcel.present_location = args['present_location']
+            parcel.present_location = args['current_location']
             db.session.commit()  # Commit changes to the database
             return ({"message": "Parcel location updated successfully"})
         else:

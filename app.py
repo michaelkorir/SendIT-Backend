@@ -237,7 +237,7 @@ class CancelParcel(Resource):
         if parcel.status.lower() == 'delivered':
             return {"message": "Cannot cancel a delivered parcel"}, 400
 
-        db.session.delete(parcel)
+        parcel.status = 'Canceled'
         db.session.commit()
             
         return {"message": "Parcel cancelled successfully"}, 200

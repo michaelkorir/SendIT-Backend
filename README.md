@@ -48,4 +48,4 @@ If you'd like to contribute to this project, please follow these guidelines:
 6. Create a new Pull Request.
 
 ## Authors & License
-- Michael Kiptoo  [github](https://www.github.com/michaelkorir)
+- Michael Kiptoo  [github](https://www.github.com/michaelkorir) & [MIT LICENSE](LICENSE)

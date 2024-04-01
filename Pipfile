@@ -19,6 +19,8 @@ flask-mail = "*"
 mailbox = "*"
 psycopg2-binary = "*"
 gunicorn = "*"
+python-dotenv = "*"
+flask-admin = "*"
 
 [dev-packages]
 

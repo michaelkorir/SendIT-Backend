@@ -14,13 +14,13 @@ from sqlalchemy import func
 from werkzeug.exceptions import NotFound
 from models import db, User, Parcel, TokenBlocklist
 from auth import auth_bp
-from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
-from views import UserAdminView, ParcelAdminView
+# from flask_admin import Admin
+# from flask_admin.contrib.sqla import ModelView
+# from views import UserAdminView, ParcelAdminView
 
 
 app = Flask(__name__)
-admin = Admin(app, name='SendIT Admin Panel', template_mode='bootstrap4')
+# admin = Admin(app, name='SendIT Admin Panel', template_mode='bootstrap4')
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
@@ -46,8 +46,8 @@ jwt.init_app(app)
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
-admin.add_view(UserAdminView(User, db.session))
-admin.add_view(ParcelAdminView(Parcel, db.session))
+# admin.add_view(UserAdminView(User, db.session))
+# admin.add_view(ParcelAdminView(Parcel, db.session))
 
 #check if the jwt is revoked
 @jwt.token_in_blocklist_loader 

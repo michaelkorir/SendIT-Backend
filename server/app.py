@@ -23,7 +23,7 @@ app = Flask(__name__)
 # admin = Admin(app, name='SendIT Admin Panel', template_mode='bootstrap4')
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///SENDIT.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_SECRET_KEY'] = os.getenv('ADMIN_SECRET_KEY')
